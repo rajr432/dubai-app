@@ -1,0 +1,25 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Replit/runtime state
+.pythonlibs/
+.cache/
+.upm/
+uploads/
+outputs/
+dubai-app/uploads/
+dubai-app/outputs/
+*.log
+zipFile.zip
+
+# Agent/workspace metadata
+.local/
+.agents/
