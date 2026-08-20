@@ -412,7 +412,7 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:0.4rem 0}
 <div class="toast" id="toast"><span id="toastIco">✓</span><span id="toastTxt"></span></div>
 
 <script>
-const API = window.location.origin; // same server
+const API = window.DUBAI_API_URL || window.location.origin; // Render backend URL can be injected for Vercel frontend
 let state = {
   jobId: null,
   srcLang: 'hi',
