@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DubAI — Real AI Dubbing Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07090f;
+  --surface: #0d1117;
+  --card: #111827;
+  --card2: #161f2e;
+  --border: rgba(255,255,255,0.07);
+  --accent: #e0454a;
+  --accent2: #f97316;
+  --accent3: #7c3aed;
+  --text: #eef0f4;
+  --muted: #64748b;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+body{background:
+  radial-gradient(circle at 14% 8%,rgba(124,58,237,.12),transparent 28rem),
+  radial-gradient(circle at 86% 92%,rgba(224,69,74,.10),transparent 26rem),
+  var(--bg)}
+
+/* ── Background ── */
+.bg-orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(80px);opacity:0.5}
+.bg-orb-1{width:500px;height:500px;top:-100px;left:-150px;background:radial-gradient(circle,rgba(124,58,237,0.18),transparent 70%)}
+.bg-orb-2{width:400px;height:400px;bottom:-80px;right:-100px;background:radial-gradient(circle,rgba(224,69,74,0.14),transparent 70%)}
+.app{perspective:1400px}
+
+/* ── Layout ── */
+.app{position:relative;z-index:1;display:grid;grid-template-rows:56px 1fr;height:100vh}
+
+/* ── Header ── */
+nav{display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;border-bottom:1px solid var(--border);background:rgba(7,9,15,0.78);backdrop-filter:blur(18px);box-shadow:0 10px 35px rgba(0,0,0,.16);position:relative;z-index:5}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.35rem;letter-spacing:-0.03em}
+.logo em{color:var(--accent);font-style:normal}
+.logo sup{font-size:0.5rem;font-weight:700;background:linear-gradient(135deg,var(--accent3),var(--accent));color:#fff;padding:1px 5px;border-radius:4px;vertical-align:super;margin-left:3px;letter-spacing:0.06em}
+.nav-right{display:flex;align-items:center;gap:0.75rem;font-size:0.8rem;color:var(--muted)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 6px var(--success)}
+
+/* ── Main Grid ── */
+.main{display:grid;grid-template-columns:300px 1fr;height:calc(100vh - 56px);overflow:hidden}
+.sidebar{border-right:1px solid var(--border);overflow-y:auto;padding:1.25rem;display:flex;flex-direction:column;gap:1.25rem;background:rgba(13,17,23,0.5)}
+.content{overflow-y:auto;padding:1.25rem;display:flex;flex-direction:column;gap:1rem}
+
+/* ── Cards ── */
+.card{background:linear-gradient(145deg,rgba(24,32,49,.92),rgba(13,17,27,.94));border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:1.1rem;box-shadow:0 16px 35px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.045);transform:translateZ(0);transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+.card:hover{transform:translateY(-2px) translateZ(8px);border-color:rgba(255,255,255,.14);box-shadow:0 22px 44px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.06)}
+.card-title{font-family:'Syne',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.85rem;display:flex;align-items:center;gap:0.4rem}
+
+/* ── Upload ── */
+.drop-zone{border:1.5px dashed rgba(255,255,255,0.1);border-radius:12px;padding:1.5rem 1rem;text-align:center;cursor:pointer;transition:all .25s;background:linear-gradient(145deg,rgba(255,255,255,.04),rgba(255,255,255,.008));position:relative;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.drop-zone:hover,.drop-zone.over{border-color:var(--accent);background:rgba(224,69,74,0.05)}
+.drop-zone.ready{border-color:var(--success);border-style:solid;background:rgba(16,185,129,0.04)}
+.drop-icon{font-size:2rem;margin-bottom:0.6rem}
+.drop-text{font-size:0.8rem;color:var(--muted);line-height:1.6}
+.drop-text strong{display:block;color:var(--text);font-size:0.87rem;margin-bottom:3px}
+#fileInput{display:none}
+
+.file-info{margin-top:0.6rem;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:0.6rem 0.75rem;display:none;font-size:0.78rem}
+.file-info .fname{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-info .fmeta{color:var(--muted);font-size:0.72rem;margin-top:2px}
+
+/* ── Lang Grid ── */
+.lang-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.4rem}
+.lang-btn{padding:0.55rem 0.4rem;border-radius:9px;border:1.5px solid var(--border);background:rgba(255,255,255,0.02);color:var(--muted);font-size:0.74rem;font-weight:500;cursor:pointer;text-align:center;transition:all .18s;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.3}
+.lang-btn:hover{border-color:rgba(255,255,255,0.18);color:var(--text)}
+.lang-btn.on{border-color:var(--accent);background:rgba(224,69,74,0.1);color:var(--text);box-shadow:0 0 10px rgba(224,69,74,0.15)}
+.lang-flag{font-size:1.15rem}
+
+/* ── Toggles ── */
+.feat-row{display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.7rem;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,0.015);cursor:pointer;transition:all .18s;margin-bottom:0.4rem}
+.feat-row:last-child{margin-bottom:0}
+.feat-row:hover{border-color:rgba(255,255,255,0.14)}
+.feat-row.on{border-color:rgba(124,58,237,0.35);background:rgba(124,58,237,0.06)}
+.feat-left{display:flex;align-items:center;gap:0.55rem;font-size:0.8rem}
+.pill{width:34px;height:18px;border-radius:9px;background:var(--muted);position:relative;transition:background .2s;flex-shrink:0}
+.pill::after{content:'';position:absolute;width:12px;height:12px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,0.4)}
+.feat-row.on .pill{background:var(--accent3)}
+.feat-row.on .pill::after{transform:translateX(16px)}
+
+/* ── Voice Options ── */
+.voice-opt{display:flex;align-items:center;gap:0.55rem;padding:0.5rem 0.65rem;border-radius:8px;cursor:pointer;font-size:0.79rem;color:var(--muted);transition:all .15s;border:1px solid transparent;margin-bottom:0.3rem}
+.voice-opt:hover{background:rgba(255,255,255,0.04);color:var(--text)}
+.voice-opt.on{background:rgba(249,115,22,0.1);border-color:rgba(249,115,22,0.3);color:var(--text)}
+.vdot{width:8px;height:8px;border-radius:50%;border:2px solid currentColor;flex-shrink:0;transition:all .15s}
+.voice-opt.on .vdot{background:var(--accent2);border-color:var(--accent2)}
+
+/* ── Speed ── */
+.speed-row{display:flex;gap:0.35rem}
+.spd{flex:1;padding:5px 0;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.72rem;font-weight:700;cursor:pointer;text-align:center;transition:all .15s;font-family:'Syne',sans-serif}
+.spd:hover{border-color:rgba(255,255,255,0.2);color:var(--text)}
+.spd.on{border-color:var(--accent2);background:rgba(249,115,22,0.1);color:var(--accent2)}
+
+/* ── Video Preview ── */
+.video-wrap{background:#000;border-radius:14px;overflow:hidden;position:relative;aspect-ratio:16/9;width:100%;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 18px 40px rgba(0,0,0,.22)}
+video{width:100%;height:100%;object-fit:contain;display:none}
+.video-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.75rem;background:radial-gradient(circle at 50% 42%,rgba(124,58,237,.16),transparent 11rem),linear-gradient(135deg,#0d1117,#111827)}
+.video-placeholder::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 30px,rgba(255,255,255,0.008) 30px,rgba(255,255,255,0.008) 31px)}
+.play-icon{width:58px;height:58px;border-radius:50%;border:2px solid rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:1.25rem;cursor:pointer;transition:all .2s;backdrop-filter:blur(8px);background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.025));box-shadow:0 12px 28px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.18)}
+.play-icon:hover{border-color:var(--accent);background:rgba(224,69,74,0.15)}
+.video-info-bar{position:absolute;bottom:0;left:0;right:0;padding:0.75rem 1rem;background:linear-gradient(transparent,rgba(0,0,0,0.85));display:none;align-items:center;justify-content:space-between}
+
+/* ── Subtitle Editor ── */
+.sub-list{display:flex;flex-direction:column;gap:0.4rem;max-height:260px;overflow-y:auto;padding-right:2px}
+.sub-list::-webkit-scrollbar{width:3px}
+.sub-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sub-row{display:grid;grid-template-columns:72px 72px 1fr 60px;gap:0.4rem;align-items:center;padding:0.45rem 0.6rem;border-radius:9px;background:rgba(255,255,255,0.02);border:1px solid transparent;transition:border-color .15s}
+.sub-row:hover{border-color:var(--border)}
+.sub-row.active-sub{border-color:rgba(224,69,74,0.3);background:rgba(224,69,74,0.04)}
+.sub-time{font-size:0.68rem;color:var(--muted);font-family:'Syne',monospace;background:rgba(255,255,255,0.04);padding:3px 5px;border-radius:5px;text-align:center}
+.sub-txt{font-size:0.79rem;background:transparent;border:none;color:var(--text);width:100%;outline:none;font-family:'DM Sans',sans-serif}
+.sub-actions{display:flex;gap:0.2rem;justify-content:flex-end}
+.sub-act{width:22px;height:22px;border-radius:5px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;font-family:inherit}
+.sub-act:hover{background:rgba(255,255,255,0.06);border-color:var(--border);color:var(--text)}
+.sub-act.del:hover{color:var(--error)}
+
+/* ── Process Button ── */
+.proc-btn{width:100%;padding:0.9rem;border-radius:13px;border:none;background:linear-gradient(135deg,#8b5cf6 0%,var(--accent3) 42%,var(--accent) 100%);color:#fff;font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;letter-spacing:0.02em;display:flex;align-items:center;justify-content:center;gap:0.5rem;transition:all .25s;position:relative;overflow:hidden;box-shadow:0 10px 24px rgba(124,58,237,.22),inset 0 1px 0 rgba(255,255,255,.22)}
+.proc-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(255,255,255,0.12),transparent);transform:translateX(-100%);transition:transform .5s}
+.proc-btn:hover:not(:disabled)::before{transform:translateX(100%)}
+.proc-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 24px rgba(224,69,74,0.3)}
+.proc-btn:disabled{opacity:0.55;cursor:not-allowed;transform:none}
+
+/* ── Progress Pipeline ── */
+.pipeline{display:flex;flex-direction:column;gap:0.5rem}
+.pip-step{display:flex;align-items:center;gap:0.7rem;padding:0.65rem 0.75rem;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid var(--border);transition:all .3s}
+.pip-step.active{border-color:rgba(249,115,22,0.4);background:rgba(249,115,22,0.06)}
+.pip-step.done{border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.04)}
+.pip-step.err{border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.05)}
+.pip-icon{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0;transition:all .25s}
+.pip-step.active .pip-icon{border-color:var(--accent2);animation:pulse 1.5s infinite}
+.pip-step.done .pip-icon{background:var(--success);border-color:var(--success)}
+.pip-step.err .pip-icon{background:var(--error);border-color:var(--error)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,0.4)}50%{box-shadow:0 0 0 6px rgba(249,115,22,0)}}
+.pip-info{flex:1}
+.pip-name{font-size:0.79rem;font-weight:600;margin-bottom:2px}
+.pip-msg{font-size:0.69rem;color:var(--muted)}
+.pip-bar{height:2px;background:rgba(255,255,255,0.06);border-radius:1px;margin-top:5px;overflow:hidden}
+.pip-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:1px;transition:width .4s ease;width:0%}
+
+/* ── Output ── */
+.output-card{display:none;animation:fadeUp .4s ease}
+.output-card.show{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.dl-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.85rem}
+.dl-btn{padding:0.65rem;border-radius:10px;border:1.5px solid var(--border);background:rgba(255,255,255,0.02);color:var(--text);font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:600;cursor:pointer;text-align:center;transition:all .18s;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:0.35rem}
+.dl-btn:hover{border-color:var(--success);background:rgba(16,185,129,0.08)}
+.dl-btn.primary{border-color:var(--success);background:rgba(16,185,129,0.1);grid-column:1/-1}
+
+/* ── Tags ── */
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;font-size:0.67rem;font-weight:700;letter-spacing:0.04em}
+.tag-g{background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.2)}
+.tag-p{background:rgba(124,58,237,0.12);color:#a78bfa;border:1px solid rgba(124,58,237,0.2)}
+.tag-o{background:rgba(249,115,22,0.12);color:var(--accent2);border:1px solid rgba(249,115,22,0.2)}
+.tag-r{background:rgba(224,69,74,0.12);color:#f87171;border:1px solid rgba(224,69,74,0.2)}
+.control-label{display:flex;align-items:center;justify-content:space-between;gap:.55rem;color:var(--muted);font-size:.73rem;margin:.55rem 0}
+.control-label output{color:var(--accent2);font-weight:700}
+.control-select{width:52%;padding:.42rem .5rem;border-radius:7px;border:1px solid var(--border);background:#151d2d;color:var(--text);font:inherit;font-size:.72rem;outline:none}
+.control-label input[type=range]{width:52%;accent-color:var(--accent2)}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:1.25rem;right:1.25rem;background:var(--card2);border:1px solid var(--border);border-radius:11px;padding:0.65rem 1rem;font-size:0.79rem;z-index:999;display:flex;align-items:center;gap:0.5rem;transform:translateY(80px);opacity:0;transition:all .3s;max-width:280px;box-shadow:0 4px 20px rgba(0,0,0,0.5)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-color:rgba(16,185,129,0.35)}
+.toast.bad{border-color:rgba(239,68,68,0.35)}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.07);border-radius:2px}
+
+/* ── Utils ── */
+.row{display:flex;align-items:center;gap:0.5rem}.flex1{flex:1}.syne{font-family:'Syne',sans-serif}.sm{font-size:0.78rem}.xs{font-size:0.72rem}.muted{color:var(--muted)}
+hr.divider{border:none;border-top:1px solid var(--border);margin:0.4rem 0}
+@media (max-width: 820px){
+  html,body{height:auto;min-height:100%;overflow-x:hidden}
+  .app{display:block;height:auto;min-height:100vh}
+  nav{height:58px;padding:0 1rem;position:sticky;top:0}
+  .logo{font-size:1.15rem}
+  .nav-right{font-size:.7rem;gap:.45rem}
+  .main{display:block;height:auto;overflow:visible}
+  .sidebar,.content{overflow:visible;padding:.85rem;gap:.85rem}
+  .sidebar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-right:0;border-bottom:1px solid var(--border);background:rgba(13,17,23,.42)}
+  .sidebar .card:first-child,.sidebar .card:nth-child(4),.sidebar .card:nth-child(5){grid-column:1/-1}
+  .content{padding-top:.9rem}
+  .card{padding:.9rem;border-radius:14px}
+  .card:hover{transform:none}
+  .video-wrap{border-radius:12px}
+  .sub-row{grid-template-columns:58px 58px minmax(0,1fr) 28px;gap:.3rem}
+  .sub-time{font-size:.6rem;padding:3px 2px}
+  .sub-txt{font-size:.72rem;min-width:0}
+  .dl-grid{grid-template-columns:1fr}
+  .dl-btn.primary{grid-column:auto}
+  .toast{left:.85rem;right:.85rem;bottom:.85rem;max-width:none}
+}
+@media (max-width: 430px){
+  .sidebar{display:flex}
+  .sidebar .card{width:100%}
+  .nav-right span{display:none}
+  .lang-btn{padding:.6rem .35rem}
+  .video-placeholder{gap:.6rem}
+  .video-placeholder div:last-child{font-size:.72rem!important;padding:0 1rem}
+}
+</style>
+</head>
+<body>
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+
+<div class="app">
+<!-- ── Nav ── -->
+<nav>
+  <div class="logo">Dub<em>AI</em><sup>REAL</sup></div>
+  <div class="nav-right">
+    <div class="status-dot" id="serverDot"></div>
+    <span id="serverLabel">Server se connect ho raha hai...</span>
+  </div>
+</nav>
+
+<div class="main">
+<!-- ══ SIDEBAR ══ -->
+<div class="sidebar">
+
+  <!-- Upload -->
+  <div class="card">
+    <div class="card-title">📁 Video Upload</div>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
+         ondragover="doDragOver(event)" ondrop="doDrop(event)" ondragleave="doDragLeave()">
+      <input type="file" id="fileInput" accept="video/*" onchange="onFileSelect(event)">
+      <div class="drop-icon" id="dropIcon">🎬</div>
+      <div class="drop-text" id="dropText">
+        <strong>Click ya Drag & Drop</strong>
+        MP4, MOV, AVI, MKV — Max 500MB
+      </div>
+    </div>
+    <div class="file-info" id="fileInfo">
+      <div class="fname" id="fname"></div>
+      <div class="fmeta" id="fmeta"></div>
+    </div>
+  </div>
+
+  <!-- Source Language -->
+  <div class="card">
+    <div class="card-title">🗣️ Original Boli</div>
+    <div class="lang-grid" id="srcGrid">
+      <button class="lang-btn on" data-l="hi" onclick="pickLang('src',this)"><span class="lang-flag">🇮🇳</span>Hindi</button>
+      <button class="lang-btn" data-l="en" onclick="pickLang('src',this)"><span class="lang-flag">🇺🇸</span>English</button>
+      <button class="lang-btn" data-l="ur" onclick="pickLang('src',this)"><span class="lang-flag">🇵🇰</span>Urdu</button>
+      <button class="lang-btn" data-l="bn" onclick="pickLang('src',this)"><span class="lang-flag">🇧🇩</span>Bengali</button>
+      <button class="lang-btn" data-l="ta" onclick="pickLang('src',this)"><span class="lang-flag">🇮🇳</span>Tamil</button>
+      <button class="lang-btn" data-l="ar" onclick="pickLang('src',this)"><span class="lang-flag">🇸🇦</span>Arabic</button>
+    </div>
+  </div>
+
+  <!-- Target Language -->
+  <div class="card">
+    <div class="card-title">🎯 Dubbing Boli</div>
+    <div class="lang-grid" id="tgtGrid">
+      <button class="lang-btn on" data-l="en" onclick="pickLang('tgt',this)"><span class="lang-flag">🇺🇸</span>English</button>
+      <button class="lang-btn" data-l="es" onclick="pickLang('tgt',this)"><span class="lang-flag">🇪🇸</span>Spanish</button>
+      <button class="lang-btn" data-l="fr" onclick="pickLang('tgt',this)"><span class="lang-flag">🇫🇷</span>French</button>
+      <button class="lang-btn" data-l="de" onclick="pickLang('tgt',this)"><span class="lang-flag">🇩🇪</span>German</button>
+      <button class="lang-btn" data-l="ja" onclick="pickLang('tgt',this)"><span class="lang-flag">🇯🇵</span>Japanese</button>
+      <button class="lang-btn" data-l="zh" onclick="pickLang('tgt',this)"><span class="lang-flag">🇨🇳</span>Chinese</button>
+      <button class="lang-btn" data-l="ko" onclick="pickLang('tgt',this)"><span class="lang-flag">🇰🇷</span>Korean</button>
+      <button class="lang-btn" data-l="pt" onclick="pickLang('tgt',this)"><span class="lang-flag">🇧🇷</span>Portuguese</button>
+      <button class="lang-btn" data-l="ru" onclick="pickLang('tgt',this)"><span class="lang-flag">🇷🇺</span>Russian</button>
+      <button class="lang-btn" data-l="hi" onclick="pickLang('tgt',this)"><span class="lang-flag">🇮🇳</span>Hindi</button>
+      <button class="lang-btn" data-l="ar" onclick="pickLang('tgt',this)"><span class="lang-flag">🇸🇦</span>Arabic</button>
+      <button class="lang-btn" data-l="tr" onclick="pickLang('tgt',this)"><span class="lang-flag">🇹🇷</span>Turkish</button>
+    </div>
+  </div>
+
+  <!-- Voice -->
+  <div class="card">
+    <div class="card-title">🎙️ Voice Style</div>
+    <div id="voiceList">
+      <div class="voice-opt on" data-v="natural" onclick="pickVoice(this)"><div class="vdot"></div>Natural (Auto)</div>
+      <div class="voice-opt" data-v="male" onclick="pickVoice(this)"><div class="vdot"></div>Male Voice</div>
+      <div class="voice-opt" data-v="female" onclick="pickVoice(this)"><div class="vdot"></div>Female Voice</div>
+      <div class="voice-opt" data-v="young" onclick="pickVoice(this)"><div class="vdot"></div>Youth Energy</div>
+    </div>
+    <hr class="divider" style="margin-top:0.7rem">
+    <div class="card-title" style="margin-top:0.7rem">⚡ Speed</div>
+    <div class="speed-row">
+      <button class="spd" onclick="pickSpd(this)">0.75x</button>
+      <button class="spd on" onclick="pickSpd(this)">1.0x</button>
+      <button class="spd" onclick="pickSpd(this)">1.25x</button>
+      <button class="spd" onclick="pickSpd(this)">1.5x</button>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <div class="card">
+    <div class="card-title">🤖 AI Features</div>
+    <div class="feat-row on" data-feature="subtitles" onclick="this.classList.toggle('on')"><div class="feat-left"><span>💬</span><span>Auto Subtitles</span></div><div class="pill"></div></div>
+    <div class="feat-row on" data-feature="noise" onclick="this.classList.toggle('on')"><div class="feat-left"><span>🔇</span><span>Noise Remove</span></div><div class="pill"></div></div>
+    <div class="feat-row" data-feature="music" onclick="this.classList.toggle('on')"><div class="feat-left"><span>🎵</span><span>Keep Background Music</span></div><div class="pill"></div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎛️ Output Controls</div>
+    <label class="control-label">Subtitle style
+      <select id="subtitleStyle" class="control-select">
+        <option value="classic">Classic white</option><option value="yellow">Creator yellow</option><option value="minimal">Minimal clean</option>
+      </select>
+    </label>
+    <label class="control-label">Subtitle position
+      <select id="subtitlePosition" class="control-select">
+        <option value="bottom">Bottom</option><option value="center">Center</option><option value="top">Top</option>
+      </select>
+    </label>
+    <label class="control-label">Render quality
+      <select id="outputQuality" class="control-select">
+        <option value="fast">Fast preview</option><option value="standard" selected>Standard</option><option value="high">High quality</option>
+      </select>
+    </label>
+    <label class="control-label">Voice volume <output id="voiceVolumeValue">100%</output>
+      <input id="voiceVolume" type="range" min="20" max="200" value="100" oninput="voiceVolumeValue.value=this.value+'%'">
+    </label>
+    <label class="control-label">Music volume <output id="musicVolumeValue">18%</output>
+      <input id="musicVolume" type="range" min="0" max="100" value="18" oninput="musicVolumeValue.value=this.value+'%'">
+    </label>
+  </div>
+
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div class="content">
+
+  <!-- Video Preview -->
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="video-wrap" id="videoWrap">
+      <div class="video-placeholder" id="vidPlaceholder">
+        <div class="play-icon">🎬</div>
+        <div style="text-align:center;font-size:0.82rem;color:var(--muted)">Video upload karo — yahan preview aayega</div>
+      </div>
+      <video id="videoEl" controls></video>
+      <div class="video-info-bar" id="videoBar">
+        <div class="row" style="gap:0.4rem">
+          <span class="tag tag-p" id="durTag">—</span>
+          <span class="tag tag-o" id="resTag">—</span>
+        </div>
+        <span class="tag tag-g">Ready ✓</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subtitle Editor -->
+  <div class="card" id="subCard">
+    <div class="row" style="margin-bottom:0.85rem">
+      <div class="card-title" style="margin-bottom:0;flex:1">📝 Subtitle Editor</div>
+      <span class="tag tag-p" id="subStatusTag">Waiting...</span>
+      <button onclick="addSub()" style="margin-left:0.4rem;padding:3px 10px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;font-family:inherit">+ Add</button>
+    </div>
+    <div class="sub-list" id="subList">
+      <div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.8rem">Video process hone ke baad subtitles yahan aayenge</div>
+    </div>
+  </div>
+
+  <!-- Process Button -->
+  <button class="proc-btn" id="procBtn" onclick="startProcess()" disabled>
+    <span>🚀</span> AI Pipeline Shuru Karo
+  </button>
+
+  <!-- Pipeline Progress -->
+  <div class="card" id="pipeCard" style="display:none">
+    <div class="row" style="margin-bottom:0.9rem">
+      <div class="card-title" style="margin-bottom:0;flex:1">⚙️ AI Processing</div>
+      <span class="tag tag-o" id="pctTag">0%</span>
+      <button class="sub-act" id="cancelBtn" onclick="cancelProcess()" title="Cancel processing">✕</button>
+    </div>
+    <div class="pipeline" id="pipeline">
+      <div class="pip-step" id="pip-extract"><div class="pip-icon">🔊</div><div class="pip-info"><div class="pip-name">Audio Extraction</div><div class="pip-msg">Video se audio nikalna</div><div class="pip-bar"><div class="pip-fill" id="pf-extract"></div></div></div></div>
+      <div class="pip-step" id="pip-transcribe"><div class="pip-icon">🧠</div><div class="pip-info"><div class="pip-name">Speech Recognition</div><div class="pip-msg">Whisper AI sun raha hai</div><div class="pip-bar"><div class="pip-fill" id="pf-transcribe"></div></div></div></div>
+      <div class="pip-step" id="pip-translate"><div class="pip-icon">🌐</div><div class="pip-info"><div class="pip-name">AI Translation</div><div class="pip-msg">Translate ho raha hai</div><div class="pip-bar"><div class="pip-fill" id="pf-translate"></div></div></div></div>
+      <div class="pip-step" id="pip-tts"><div class="pip-icon">🎙️</div><div class="pip-info"><div class="pip-name">Voice Synthesis</div><div class="pip-msg">Edge TTS voice bana raha hai</div><div class="pip-bar"><div class="pip-fill" id="pf-tts"></div></div></div></div>
+      <div class="pip-step" id="pip-subtitles"><div class="pip-icon">💬</div><div class="pip-info"><div class="pip-name">Subtitle Generation</div><div class="pip-msg">SRT file ban rahi hai</div><div class="pip-bar"><div class="pip-fill" id="pf-subtitles"></div></div></div></div>
+      <div class="pip-step" id="pip-assemble"><div class="pip-icon">🎛️</div><div class="pip-info"><div class="pip-name">Audio Assembly</div><div class="pip-msg">Segments ko jod raha hai</div><div class="pip-bar"><div class="pip-fill" id="pf-assemble"></div></div></div></div>
+      <div class="pip-step" id="pip-render"><div class="pip-icon">🎬</div><div class="pip-info"><div class="pip-name">Final Video Render</div><div class="pip-msg">FFmpeg se render ho raha hai</div><div class="pip-bar"><div class="pip-fill" id="pf-render"></div></div></div></div>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div class="card output-card" id="outputCard">
+    <div class="row" style="margin-bottom:0.85rem">
+      <span style="font-size:1.4rem">🎉</span>
+      <div class="flex1">
+        <div class="syne" style="font-weight:700;font-size:0.95rem">Video Ready Hai!</div>
+        <div class="xs muted">Dubbed video download karo</div>
+      </div>
+      <span class="tag tag-g">✓ Done</span>
+    </div>
+    <div class="video-wrap" id="outVideoWrap" style="border-radius:10px;overflow:hidden">
+      <video id="outVideo" controls style="display:block;width:100%"></video>
+    </div>
+    <div class="dl-grid" id="dlGrid">
+      <!-- Filled by JS -->
+    </div>
+  </div>
+
+</div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<div class="toast" id="toast"><span id="toastIco">✓</span><span id="toastTxt"></span></div>
+
+<script>
+const API = window.location.origin; // same server
+let state = {
+  jobId: null,
+  srcLang: 'hi',
+  tgtLang: 'en',
+  voice: 'natural',
+  speed: 1.0,
+  subtitleSubs: true,
+  polling: null,
+  subtitles: [],
+  processing: false,
+};
+
+// ── Server check ──────────────────────────────────────────────────
+async function checkServer() {
+  try {
+    const r = await fetch(API + '/health', { method: 'GET' });
+    // any response means server is up
+    setServerStatus(true);
+  } catch {
+    setServerStatus(false);
+  }
+}
+function setServerStatus(ok) {
+  const dot = document.getElementById('serverDot');
+  const lbl = document.getElementById('serverLabel');
+  if (ok) {
+    dot.style.background = 'var(--success)';
+    dot.style.boxShadow = '0 0 6px var(--success)';
+    lbl.textContent = 'Server Online ✓';
+  } else {
+    dot.style.background = 'var(--error)';
+    dot.style.boxShadow = '0 0 6px var(--error)';
+    lbl.textContent = 'Server offline — pehle server.py chalao';
+  }
+}
+
+// ── Upload ────────────────────────────────────────────────────────
+function doDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('over'); }
+function doDragLeave() { document.getElementById('dropZone').classList.remove('over'); }
+function doDrop(e) { e.preventDefault(); doDragLeave(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }
+function onFileSelect(e) { const f = e.target.files[0]; if (f) handleFile(f); }
+
+async function handleFile(file) {
+  if (!file.type.startsWith('video/')) { toast('Sirf video files allowed hain!', 'bad'); return; }
+
+  // Local preview
+  const url = URL.createObjectURL(file);
+  const vid = document.getElementById('videoEl');
+  vid.src = url;
+  vid.style.display = 'block';
+  document.getElementById('vidPlaceholder').style.display = 'none';
+  vid.onloadedmetadata = () => {
+    const d = Math.floor(vid.duration), m = Math.floor(d/60), s = d%60;
+    document.getElementById('durTag').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    document.getElementById('resTag').textContent = `${vid.videoWidth}×${vid.videoHeight}`;
+    document.getElementById('videoBar').style.display = 'flex';
+  };
+
+  // Upload to server
+  const dz = document.getElementById('dropZone');
+  document.getElementById('dropIcon').textContent = '⏳';
+  document.getElementById('dropText').innerHTML = '<strong>Upload ho raha hai...</strong>';
+  dz.style.pointerEvents = 'none';
+
+  const fd = new FormData();
+  fd.append('file', file);
+
+  try {
+    const r = await fetch(API + '/upload', { method: 'POST', body: fd });
+    if (!r.ok) throw new Error(await r.text());
+    const data = await r.json();
+    state.jobId = data.job_id;
+
+    // UI update
+    dz.classList.add('ready');
+    document.getElementById('dropIcon').textContent = '✅';
+    document.getElementById('dropText').innerHTML = '<strong>Upload Complete!</strong>Process ke liye ready';
+    dz.style.pointerEvents = 'auto';
+
+    const fi = document.getElementById('fileInfo');
+    fi.style.display = 'block';
+    document.getElementById('fname').textContent = file.name;
+    document.getElementById('fmeta').textContent =
+      (file.size/1024/1024).toFixed(1) + ' MB' +
+      (data.info?.duration ? ` • ${Math.floor(data.info.duration)}s` : '');
+
+    document.getElementById('procBtn').disabled = false;
+    toast('Video upload ho gayi! Ab process karo 🎬', 'ok');
+  } catch (err) {
+    document.getElementById('dropIcon').textContent = '❌';
+    document.getElementById('dropText').innerHTML = '<strong>Upload fail hua</strong>' + err.message;
+    dz.style.pointerEvents = 'auto';
+    toast('Upload error: ' + err.message, 'bad');
+  }
+}
+
+// ── Lang / Voice / Speed ──────────────────────────────────────────
+function pickLang(type, btn) {
+  const grid = type === 'src' ? document.getElementById('srcGrid') : document.getElementById('tgtGrid');
+  grid.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  if (type === 'src') state.srcLang = btn.dataset.l;
+  else state.tgtLang = btn.dataset.l;
+}
+function pickVoice(el) {
+  document.querySelectorAll('.voice-opt').forEach(v => v.classList.remove('on'));
+  el.classList.add('on'); state.voice = el.dataset.v;
+}
+function pickSpd(btn) {
+  document.querySelectorAll('.spd').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on'); state.speed = parseFloat(btn.textContent);
+}
+
+// ── Start Processing ──────────────────────────────────────────────
+async function startProcess() {
+  if (!state.jobId) { toast('Pehle video upload karo!', 'bad'); return; }
+
+  const btn = document.getElementById('procBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span>⚙️</span> Processing...';
+
+  const featureOn = feature => document.querySelector(`.feat-row[data-feature="${feature}"]`)?.classList.contains('on');
+  const addSubs = featureOn('subtitles');
+  const noiseRemove = featureOn('noise');
+  const keepMusic = featureOn('music');
+
+  const fd = new FormData();
+  fd.append('job_id', state.jobId);
+  fd.append('source_lang', state.srcLang);
+  fd.append('target_lang', state.tgtLang);
+  fd.append('voice_type', state.voice);
+  fd.append('speed', state.speed);
+  fd.append('add_subtitles', addSubs ? 'true' : 'false');
+  fd.append('noise_remove', noiseRemove ? 'true' : 'false');
+  fd.append('keep_music', keepMusic ? 'true' : 'false');
+  fd.append('music_volume', Number(document.getElementById('musicVolume').value) / 100);
+  fd.append('voice_volume', Number(document.getElementById('voiceVolume').value) / 100);
+  fd.append('subtitle_style', document.getElementById('subtitleStyle').value);
+  fd.append('subtitle_position', document.getElementById('subtitlePosition').value);
+  fd.append('output_quality', document.getElementById('outputQuality').value);
+
+  try {
+    const r = await fetch(API + '/process', { method: 'POST', body: fd });
+    if (!r.ok) throw new Error(await r.text());
+
+    document.getElementById('pipeCard').style.display = 'block';
+    document.getElementById('outputCard').classList.remove('show');
+
+    // Start polling
+    state.polling = setInterval(pollProgress, 1200);
+    toast('AI pipeline shuru ho gayi! ⚡', 'ok');
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerHTML = '<span>🚀</span> AI Pipeline Shuru Karo';
+    toast('Error: ' + err.message, 'bad');
+  }
+}
+
+// ── Poll Progress ─────────────────────────────────────────────────
+const STEP_ORDER = ['extract','transcribe','translate','tts','subtitles','assemble','render'];
+const STEP_PCT = { extract:[5,15], transcribe:[15,35], translate:[35,55], tts:[55,80], subtitles:[58,62], assemble:[80,88], render:[88,100] };
+
+async function pollProgress() {
+  try {
+    const r = await fetch(API + '/progress/' + state.jobId);
+    const data = await r.json();
+    updatePipeline(data);
+
+    if (data.status === 'done') {
+      clearInterval(state.polling);
+      await loadResult();
+    } else if (data.status === 'error') {
+      clearInterval(state.polling);
+      showError(data.message);
+    }
+  } catch (e) { /* ignore network blip */ }
+}
+
+function updatePipeline(data) {
+  const { step, percent, message, status } = data;
+  document.getElementById('pctTag').textContent = percent + '%';
+
+  STEP_ORDER.forEach(s => {
+    const el = document.getElementById('pip-' + s);
+    const fill = document.getElementById('pf-' + s);
+    if (!el) return;
+
+    const [lo, hi] = STEP_PCT[s] || [0, 100];
+
+    if (step === s) {
+      el.className = 'pip-step active';
+      const localPct = Math.min(100, ((percent - lo) / (hi - lo)) * 100);
+      fill.style.width = Math.max(0, localPct) + '%';
+      el.querySelector('.pip-msg').textContent = message;
+    } else if (percent > hi) {
+      el.className = 'pip-step done';
+      fill.style.width = '100%';
+      el.querySelector('.pip-icon').textContent = '✓';
+    } else if (status === 'error' && step === s) {
+      el.className = 'pip-step err';
+    }
+  });
+}
+
+async function loadResult() {
+  try {
+    const r = await fetch(API + '/result/' + state.jobId);
+    const data = await r.json();
+
+    // Show output video
+    const outVid = document.getElementById('outVideo');
+    outVid.src = API + data.files.video;
+    document.getElementById('outputCard').classList.add('show');
+
+    // Download links
+    const grid = document.getElementById('dlGrid');
+    grid.innerHTML = `
+      <a class="dl-btn primary" href="${API + data.files.video}" download>⬇️ Dubbed MP4 Download</a>
+      <a class="dl-btn" href="${API + data.files.srt_translated}" download>📄 Translated SRT</a>
+      <a class="dl-btn" href="${API + data.files.srt_original}" download>📄 Original SRT</a>
+      <a class="dl-btn" href="${API + data.files.transcript}" download>📝 Transcript</a>
+    `;
+
+    // Populate subtitle editor
+    if (data.segments && data.segments.length) {
+      state.subtitles = data.segments;
+      renderSubs();
+      document.getElementById('subStatusTag').textContent = data.segments.length + ' segments';
+      document.getElementById('subStatusTag').className = 'tag tag-g';
+    }
+
+    // Reset button
+    const btn = document.getElementById('procBtn');
+    btn.disabled = false;
+    btn.innerHTML = '<span>🔄</span> Dobara Process Karo';
+
+    toast('🎉 Video ready hai! Download karo!', 'ok');
+    document.getElementById('outputCard').scrollIntoView({ behavior: 'smooth' });
+  } catch (e) {
+    toast('Result load error: ' + e.message, 'bad');
+  }
+}
+
+function showError(msg) {
+  const btn = document.getElementById('procBtn');
+  btn.disabled = false;
+  btn.innerHTML = '<span>🔄</span> Dobara Try Karo';
+  document.querySelectorAll('.pip-step.active').forEach(el => el.className = 'pip-step err');
+  toast('Error: ' + msg, 'bad');
+}
+
+async function cancelProcess() {
+  if (!state.jobId) return;
+  try {
+    const r = await fetch(API + '/cancel/' + state.jobId, {method:'POST'});
+    if (!r.ok) throw new Error(await r.text());
+    toast('Cancel request bhej di gayi', 'ok');
+  } catch (e) {
+    toast('Cancel error: ' + e.message, 'bad');
+  }
+}
+
+// ── Subtitle Editor ───────────────────────────────────────────────
+function renderSubs() {
+  const list = document.getElementById('subList');
+  if (!state.subtitles.length) {
+    list.innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.8rem">Koi subtitle nahi</div>';
+    return;
+  }
+  list.innerHTML = state.subtitles.map((s, i) => `
+    <div class="sub-row ${i===0?'active-sub':''}" id="sr${i}">
+      <div class="sub-time">${fmtTime(s.start)}</div>
+      <div class="sub-time">${fmtTime(s.end)}</div>
+      <input class="sub-txt" value="${escHtml(s.translated)}" oninput="state.subtitles[${i}].translated=this.value">
+      <div class="sub-actions">
+        <button class="sub-act del" onclick="delSub(${i})" title="Delete">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function fmtTime(sec) {
+  const s = Math.floor(sec), m = Math.floor(s/60), ss = s%60, ms = Math.floor((sec-s)*10);
+  return `${m}:${ss.toString().padStart(2,'0')}.${ms}`;
+}
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function delSub(i) { state.subtitles.splice(i,1); renderSubs(); }
+function addSub() {
+  state.subtitles.push({ start: 0, end: 3, original: '', translated: 'New line...' });
+  renderSubs();
+  document.getElementById('subList').scrollTop = 99999;
+}
+
+// ── Toast ─────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  document.getElementById('toastTxt').textContent = msg;
+  document.getElementById('toastIco').textContent = type === 'ok' ? '✓' : '✕';
+  el.className = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+checkServer();
+setInterval(checkServer, 10000);
+</script>
+</body>
+</html>
